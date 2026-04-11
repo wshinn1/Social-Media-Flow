@@ -34,11 +34,7 @@ export async function POST(req: NextRequest) {
     );
     const pageTokenData = await pageTokenRes.json();
 
-    if (pageTokenData.error) {
-      return NextResponse.json({ step: "page_token", error: pageTokenData.error }, { status: 400 });
-    }
-
-    const pageToken = pageTokenData.access_token ?? longLivedToken;
+    const tokenToUse = pageTokenData.access_token ?? longLivedToken;
 
     // Step 3: Subscribe page to app webhook for leadgen
     const subscribeRes = await fetch(
@@ -46,13 +42,13 @@ export async function POST(req: NextRequest) {
       {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `subscribed_fields=leadgen&access_token=${pageToken}`,
+        body: `subscribed_fields=leadgen&access_token=${tokenToUse}`,
       }
     );
     const subscribeData = await subscribeRes.json();
 
     if (subscribeData.error) {
-      return NextResponse.json({ step: "subscribe", error: subscribeData.error, page_token_used: !!pageToken }, { status: 400 });
+      return NextResponse.json({ step: "subscribe", error: subscribeData.error }, { status: 400 });
     }
 
     return NextResponse.json({
