@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin } from "@/lib/supabase";
 import { addSubscriberToMoosend } from "@/lib/moosend";
 
 const FB_VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN!;
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         const leadData = await fetchFacebookLead(leadgenId, pageId);
         if (!leadData) continue;
 
-        const { error: dbError } = await supabaseAdmin.from("leads").insert({
+        const { error: dbError } = await getSupabaseAdmin().from("leads").insert({
           first_name: leadData.first_name,
           last_name: leadData.last_name,
           email: leadData.email,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { LogIn, Loader2 } from "lucide-react";
 
@@ -17,7 +17,7 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const { error: authError } = await getSupabase().auth.signInWithPassword({
       email,
       password,
     });

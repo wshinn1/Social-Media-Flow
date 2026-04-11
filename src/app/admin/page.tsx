@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import {
   Users,
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("leads")
       .select("*")
       .order("created_at", { ascending: false });
@@ -58,7 +58,7 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getSupabase().auth.getSession().then(({ data: { session } }) => {
       if (!session) router.push("/");
       else fetchLeads();
     });
@@ -95,7 +95,7 @@ export default function AdminDashboard() {
   });
 
   async function handleLogout() {
-    await supabase.auth.signOut();
+    await getSupabase().auth.signOut();
     router.push("/");
   }
 
