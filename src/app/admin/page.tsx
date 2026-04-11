@@ -32,6 +32,12 @@ interface Lead {
 type SortKey = keyof Lead;
 type SortDir = "asc" | "desc";
 
+interface TokenStatus {
+  status: "valid" | "expiring_soon" | "expired" | "missing" | "unknown";
+  expires?: string | null;
+  daysLeft?: number;
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -40,6 +46,7 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [tokenStatus, setTokenStatus] = useState<TokenStatus | null>(null);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -60,7 +67,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     getSupabase().auth.getSession().then(({ data: { session } }) => {
       if (!session) router.push("/");
-      else fetchLeads();
+      else {
+        fetchLeads();
+        fetch("/api/token-status").then((r) => r.json()).then(setTokenStatus).catch(() => {});
+      }
     });
   }, [fetchLeads, router]);
 
@@ -136,6 +146,34 @@ export default function AdminDashboard() {
       </header>
 
       <main className="px-6 py-8 max-w-7xl mx-auto">
+        {tokenStatus && tokenStatus.status !== "valid" && (
+          <div className={`mb-6 rounded-lg p-4 border ${
+            tokenStatus.status === "expired" || tokenStatus.status === "missing"
+              ? "bg-red-50 border-red-200 text-red-800"
+              : "bg-yellow-50 border-yellow-200 text-yellow-800"
+          }`}>
+            <div className="font-semibold mb-1">
+              {tokenStatus.status === "expired" || tokenStatus.status === "missing"
+                ? "⚠️ Facebook Page Token Expired — Leads are not being received"
+                : `⚠️ Facebook Page Token Expiring in ${tokenStatus.daysLeft} day(s)`}
+            </div>
+            <div className="text-sm">
+              To refresh: go to{" "}
+              <a href="https://developers.facebook.com/tools/explorer" target="_blank" className="underline font-medium">Graph API Explorer</a>
+              {" "}→ select <strong>Wedding Lead Flow</strong> app → add permissions{" "}
+              <code className="bg-white/60 px-1 rounded">pages_show_list</code>,{" "}
+              <code className="bg-white/60 px-1 rounded">pages_read_engagement</code>,{" "}
+              <code className="bg-white/60 px-1 rounded">leads_retrieval</code>,{" "}
+              <code className="bg-white/60 px-1 rounded">pages_manage_metadata</code>{" "}
+              → Generate Access Token → run{" "}
+              <code className="bg-white/60 px-1 rounded">1636980056352348?fields=access_token</code>{" "}
+              → copy the <code className="bg-white/60 px-1 rounded">access_token</code> value → update{" "}
+              <strong>FB_PAGE_ACCESS_TOKEN</strong> in{" "}
+              <a href="https://vercel.com/dashboard" target="_blank" className="underline font-medium">Vercel</a>{" "}
+              → Redeploy.
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <StatCard
             icon={<Users className="w-5 h-5 text-blue-600" />}
