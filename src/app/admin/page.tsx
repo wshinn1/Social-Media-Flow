@@ -163,23 +163,33 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-blue-600 text-white p-2 rounded-lg">
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="bg-blue-600 text-white p-2 rounded-lg shrink-0">
             <Users className="w-5 h-5" />
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">Lead Flow Admin</h1>
-            <p className="text-xs text-gray-500">Facebook Lead Ad Dashboard</p>
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">Lead Flow Admin</h1>
+            <p className="text-xs text-gray-500 hidden sm:block">Facebook Lead Ad Dashboard</p>
           </div>
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 text-sm text-gray-600 hover:text-red-600 transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
-          Sign Out
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <button onClick={() => setView("table")} className={`p-1.5 rounded-md transition-colors ${view === "table" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}`} title="Table view">
+              <List className="w-4 h-4" />
+            </button>
+            <button onClick={() => setView("kanban")} className={`p-1.5 rounded-md transition-colors ${view === "kanban" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}`} title="Kanban view">
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Sign Out</span>
+          </button>
+        </div>
       </header>
 
       <main className="px-4 sm:px-6 py-6 sm:py-8 max-w-7xl mx-auto">
@@ -211,20 +221,10 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-        <div className="flex flex-wrap items-start gap-4 mb-6">
-          <div className="grid grid-cols-3 gap-3 sm:gap-4 flex-1 min-w-0">
-            <StatCard icon={<Users className="w-5 h-5 text-blue-600" />} label="Total" value={leads.length} />
-            <StatCard icon={<Calendar className="w-5 h-5 text-green-600" />} label="This Month" value={leads.filter((l) => { const d = new Date(l.created_at); const now = new Date(); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length} />
-            <StatCard icon={<DollarSign className="w-5 h-5 text-purple-600" />} label="Booked" value={leads.filter((l) => l.status === "booked").length} />
-          </div>
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1 shadow-sm shrink-0">
-            <button onClick={() => setView("table")} className={`p-2 rounded-md transition-colors ${view === "table" ? "bg-blue-600 text-white" : "text-gray-500 hover:text-gray-700"}`} title="Table view">
-              <List className="w-4 h-4" />
-            </button>
-            <button onClick={() => setView("kanban")} className={`p-2 rounded-md transition-colors ${view === "kanban" ? "bg-blue-600 text-white" : "text-gray-500 hover:text-gray-700"}`} title="Kanban view">
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
+          <StatCard icon={<Users className="w-5 h-5 text-blue-600" />} label="Total" value={leads.length} />
+          <StatCard icon={<Calendar className="w-5 h-5 text-green-600" />} label="This Month" value={leads.filter((l) => { const d = new Date(l.created_at); const now = new Date(); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length} />
+          <StatCard icon={<DollarSign className="w-5 h-5 text-purple-600" />} label="Booked" value={leads.filter((l) => l.status === "booked").length} />
         </div>
 
         {view === "table" ? (
@@ -257,23 +257,34 @@ export default function AdminDashboard() {
                 {/* Mobile card layout */}
                 <div className="sm:hidden divide-y divide-gray-100">
                   {sorted.map((lead) => (
-                    <div key={lead.id} className="p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-gray-900">
-                          {[lead.first_name, lead.last_name].filter(Boolean).join(" ") || "—"}
+                    <div key={lead.id} className="px-4 py-4 space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-semibold text-gray-900 text-sm leading-tight">
+                          {[lead.first_name, lead.last_name].filter(Boolean).join(" ") || "Unknown"}
                         </span>
-                        <span className="text-xs text-gray-400">{formatDate(lead.created_at)}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs text-gray-400">{formatDate(lead.created_at)}</span>
+                          <select
+                            value={lead.status ?? "new"}
+                            onChange={(e) => updateLeadStatus(lead.id, e.target.value as LeadStatus)}
+                            className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${STATUS_STYLES[lead.status ?? "new"]}`}
+                          >
+                            <option value="new">New</option>
+                            <option value="booked">Booked</option>
+                            <option value="archived">Archived</option>
+                          </select>
+                        </div>
                       </div>
-                      <a href={`mailto:${lead.email}`} className="flex items-center gap-1 text-blue-600 text-sm">
-                        <Mail className="w-3 h-3" />{lead.email}
+                      <a href={`mailto:${lead.email}`} className="flex items-center gap-1.5 text-blue-600 text-sm">
+                        <Mail className="w-3.5 h-3.5 shrink-0" /><span className="truncate">{lead.email}</span>
                       </a>
                       {lead.phone && (
-                        <a href={`tel:${lead.phone}`} className="flex items-center gap-1 text-gray-700 text-sm">
-                          <Phone className="w-3 h-3" />{lead.phone}
+                        <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-gray-600 text-sm">
+                          <Phone className="w-3.5 h-3.5 shrink-0" />{lead.phone}
                         </a>
                       )}
-                      <div className="flex items-center justify-between pt-1">
-                        <div className="flex items-center gap-2">
+                      {(lead.appointment_date || lead.budget) && (
+                        <div className="flex items-center gap-3 pt-0.5">
                           {lead.appointment_date && (
                             <span className="flex items-center gap-1 text-xs text-gray-500">
                               <Calendar className="w-3 h-3" />{formatDate(lead.appointment_date)}
@@ -285,16 +296,7 @@ export default function AdminDashboard() {
                             </span>
                           )}
                         </div>
-                        <select
-                          value={lead.status ?? "new"}
-                          onChange={(e) => updateLeadStatus(lead.id, e.target.value as LeadStatus)}
-                          className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${STATUS_STYLES[lead.status ?? "new"]}`}
-                        >
-                          <option value="new">New</option>
-                          <option value="booked">Booked</option>
-                          <option value="archived">Archived</option>
-                        </select>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -447,11 +449,11 @@ function StatCard({
   value: number;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-6 py-5 flex items-center gap-4">
-      <div className="bg-gray-50 p-3 rounded-lg">{icon}</div>
-      <div>
-        <p className="text-sm text-gray-500">{label}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-3 py-3 sm:px-6 sm:py-5 flex items-center gap-2 sm:gap-4">
+      <div className="bg-gray-50 p-2 sm:p-3 rounded-lg hidden sm:block shrink-0">{icon}</div>
+      <div className="min-w-0">
+        <p className="text-xs text-gray-500 truncate">{label}</p>
+        <p className="text-xl sm:text-2xl font-bold text-gray-900">{value}</p>
       </div>
     </div>
   );
