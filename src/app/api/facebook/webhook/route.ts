@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { addSubscriberToMoosend } from "@/lib/moosend";
+import { sendLeadNotification } from "@/lib/resend";
 
 const FB_VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN!;
 
@@ -63,6 +64,20 @@ export async function POST(req: NextRequest) {
 
         if (!moosendResult.success) {
           console.error("Moosend sync error:", moosendResult.error);
+        }
+
+        const notifyResult = await sendLeadNotification({
+          firstName: leadData.first_name,
+          lastName: leadData.last_name,
+          email: leadData.email,
+          phone: leadData.phone,
+          appointmentDate: leadData.appointment_date,
+          budget: leadData.budget,
+          leadgenId: leadgenId,
+        });
+
+        if (!notifyResult.success) {
+          console.error("Resend notification error:", notifyResult.error);
         }
       }
     }
