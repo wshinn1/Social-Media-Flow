@@ -1,7 +1,5 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 interface LeadNotificationData {
   firstName: string;
   lastName: string;
@@ -13,14 +11,16 @@ interface LeadNotificationData {
 }
 
 export async function sendLeadNotification(lead: LeadNotificationData) {
+  const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.RESEND_NOTIFY_TO;
   const from = process.env.RESEND_FROM;
 
-  if (!to || !from || !process.env.RESEND_API_KEY) {
+  if (!apiKey || !to || !from) {
     console.warn("Resend not configured — skipping email notification");
     return { success: false, error: "Resend not configured" };
   }
 
+  const resend = new Resend(apiKey);
   const name = [lead.firstName, lead.lastName].filter(Boolean).join(" ") || "Unknown";
 
   try {
@@ -39,7 +39,7 @@ export async function sendLeadNotification(lead: LeadNotificationData) {
             <tr><td style="padding:8px 0;color:#6b7280;">Budget</td><td style="padding:8px 0;color:#111827;">${lead.budget || "—"}</td></tr>
           </table>
           <div style="margin-top:24px;">
-            <a href="https://lead-flow-admin-omega.vercel.app/admin" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:10px 20px;border-radius:6px;font-weight:600;">View Dashboard</a>
+            <a href="https://leads.wesshinn.com/admin" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:10px 20px;border-radius:6px;font-weight:600;">View Dashboard</a>
           </div>
           <p style="margin-top:24px;font-size:12px;color:#9ca3af;">Lead ID: ${lead.leadgenId}</p>
         </div>

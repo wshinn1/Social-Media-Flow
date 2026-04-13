@@ -362,6 +362,11 @@ export default function AdminDashboard() {
               </>
             )}
           </div>
+        ) : loading ? (
+          <div className="py-20 text-center text-gray-400">
+            <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+            Loading leads...
+          </div>
         ) : (
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
