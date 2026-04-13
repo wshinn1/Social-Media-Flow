@@ -27,7 +27,7 @@ export async function sendLeadNotification(lead: LeadNotificationData) {
     const { error } = await resend.emails.send({
       from,
       to,
-      subject: `New Lead: ${name}`,
+      subject: `New Facebook Lead: ${lead.email || name}`,
       html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9fafb;border-radius:8px;">
           <h2 style="margin:0 0 16px;color:#111827;">New Lead Received</h2>
