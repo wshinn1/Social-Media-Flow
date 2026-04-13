@@ -27,3 +27,17 @@ create policy "Service role can insert leads"
   on public.leads
   for insert
   with check (true);
+
+-- -------------------------------------------------------
+-- Run this migration to add lead status (New/Booked/Archived)
+-- -------------------------------------------------------
+alter table public.leads
+  add column if not exists status text not null default 'new'
+  check (status in ('new', 'booked', 'archived'));
+
+-- Allow authenticated users (admin) to update lead status
+create policy "Authenticated users can update leads"
+  on public.leads
+  for update
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
