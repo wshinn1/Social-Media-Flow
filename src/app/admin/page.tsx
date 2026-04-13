@@ -162,7 +162,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen w-full overflow-x-hidden bg-gray-50">
       <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="bg-blue-600 text-white p-2 rounded-lg shrink-0">
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="px-4 sm:px-6 py-6 sm:py-8 max-w-7xl mx-auto">
+      <main className="px-4 sm:px-6 py-6 sm:py-8 max-w-7xl mx-auto w-full">
         {tokenStatus && tokenStatus.status !== "valid" && (
           <div className={`mb-6 rounded-lg p-4 border ${
             tokenStatus.status === "expired" || tokenStatus.status === "missing"
@@ -208,13 +208,13 @@ export default function AdminDashboard() {
               To refresh: go to{" "}
               <a href="https://developers.facebook.com/tools/explorer" target="_blank" className="underline font-medium">Graph API Explorer</a>
               {" "}→ select <strong>Wedding Lead Flow</strong> app → add permissions{" "}
-              <code className="bg-white/60 px-1 rounded">pages_show_list</code>,{" "}
-              <code className="bg-white/60 px-1 rounded">pages_read_engagement</code>,{" "}
-              <code className="bg-white/60 px-1 rounded">leads_retrieval</code>,{" "}
-              <code className="bg-white/60 px-1 rounded">pages_manage_metadata</code>{" "}
+              <code className="bg-white/60 px-1 rounded break-all">pages_show_list</code>,{" "}
+              <code className="bg-white/60 px-1 rounded break-all">pages_read_engagement</code>,{" "}
+              <code className="bg-white/60 px-1 rounded break-all">leads_retrieval</code>,{" "}
+              <code className="bg-white/60 px-1 rounded break-all">pages_manage_metadata</code>{" "}
               → Generate Access Token → run{" "}
-              <code className="bg-white/60 px-1 rounded">1636980056352348?fields=access_token</code>{" "}
-              → copy the <code className="bg-white/60 px-1 rounded">access_token</code> value → update{" "}
+              <code className="bg-white/60 px-1 rounded break-all">1636980056352348?fields=access_token</code>{" "}
+              → copy the <code className="bg-white/60 px-1 rounded break-all">access_token</code> value → update{" "}
               <strong>FB_PAGE_ACCESS_TOKEN</strong> in{" "}
               <a href="https://vercel.com/dashboard" target="_blank" className="underline font-medium">Vercel</a>{" "}
               → Redeploy.
