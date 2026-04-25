@@ -15,14 +15,16 @@ export async function addSubscriberToMoosend(data: {
   budget: string;
   appointmentDate: string;
 }): Promise<{ success: boolean; error?: string }> {
+  const customFields = [
+    data.phone ? `Phone=${data.phone}` : null,
+    data.budget ? `Budget=${data.budget}` : null,
+    data.appointmentDate ? `AppointmentDate=${data.appointmentDate}` : null,
+  ].filter((f): f is string => f !== null);
+
   const subscriber: MoosendSubscriber = {
     Email: data.email,
-    Name: `${data.firstName} ${data.lastName}`,
-    CustomFields: [
-      `Phone=${data.phone}`,
-      `Budget=${data.budget}`,
-      `AppointmentDate=${data.appointmentDate}`,
-    ],
+    Name: `${data.firstName} ${data.lastName}`.trim(),
+    ...(customFields.length > 0 && { CustomFields: customFields }),
   };
 
   try {
