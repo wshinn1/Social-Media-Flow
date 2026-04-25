@@ -118,9 +118,13 @@ async function fetchFacebookLead(leadgenId: string, pageId: string) {
     fields[field.name] = field.values?.[0] ?? "";
   }
 
+  const fullName = fields["full_name"] ?? "";
+  const firstName = fields["first_name"] || (fullName ? fullName.split(" ")[0] : "");
+  const lastName = fields["last_name"] || (fullName ? fullName.split(" ").slice(1).join(" ") : "");
+
   return {
-    first_name: fields["first_name"] ?? "",
-    last_name: fields["last_name"] ?? "",
+    first_name: firstName,
+    last_name: lastName,
     email: fields["email"] ?? "",
     phone: fields["phone_number"] ?? "",
     appointment_date: fields["appointment_scheduled_time"] ?? fields["date"] ?? "",
