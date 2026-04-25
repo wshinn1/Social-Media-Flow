@@ -53,6 +53,11 @@ export async function POST(req: NextRequest) {
           console.error("Supabase insert error:", dbError.message);
         }
 
+        if (!leadData.email) {
+          console.error("Skipping Moosend sync — lead has no email", leadgenId);
+          continue;
+        }
+
         const moosendResult = await addSubscriberToMoosend({
           email: leadData.email,
           firstName: leadData.first_name,
