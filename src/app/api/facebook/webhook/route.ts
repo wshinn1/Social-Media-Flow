@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { addSubscriberToMoosend } from "@/lib/moosend";
 import { sendLeadNotification } from "@/lib/resend";
+import { fetchFacebookLead } from "@/lib/facebook";
 
 const FB_VERIFY_TOKEN = process.env.FB_VERIFY_TOKEN!;
 
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
 
         if (!leadgenId || !pageId) continue;
 
-        const leadData = await fetchFacebookLead(leadgenId, pageId);
+        const leadData = await fetchFacebookLead(leadgenId);
         if (!leadData) continue;
 
         const { error: dbError } = await getSupabaseAdmin().from("leads").insert({
@@ -94,40 +95,3 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function fetchFacebookLead(leadgenId: string, pageId: string) {
-  const pageToken = process.env.FB_PAGE_ACCESS_TOKEN;
-
-  if (!pageToken) {
-    console.error("FB_PAGE_ACCESS_TOKEN is not set");
-    return null;
-  }
-
-  const res = await fetch(
-    `https://graph.facebook.com/v19.0/${leadgenId}?access_token=${pageToken}`
-  );
-
-  if (!res.ok) {
-    console.error("Facebook Graph API error", await res.text());
-    return null;
-  }
-
-  const data = await res.json();
-  const fields: Record<string, string> = {};
-
-  for (const field of data.field_data ?? []) {
-    fields[field.name] = field.values?.[0] ?? "";
-  }
-
-  const fullName = fields["full_name"] ?? "";
-  const firstName = fields["first_name"] || (fullName ? fullName.split(" ")[0] : "");
-  const lastName = fields["last_name"] || (fullName ? fullName.split(" ").slice(1).join(" ") : "");
-
-  return {
-    first_name: firstName,
-    last_name: lastName,
-    email: fields["email"] ?? "",
-    phone: fields["phone_number"] ?? "",
-    appointment_date: fields["appointment_scheduled_time"] ?? fields["date"] ?? "",
-    budget: fields["budget"] ?? fields["what_is_your_budget_"] ?? "",
-  };
-}

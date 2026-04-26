@@ -77,6 +77,7 @@ export default function AdminDashboard() {
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [syncResults, setSyncResults] = useState<Record<string, "ok" | "error">>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [refreshingId, setRefreshingId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState(EMPTY_FORM);
   const [addingLead, setAddingLead] = useState(false);
@@ -137,6 +138,25 @@ export default function AdminDashboard() {
       ? String(av).localeCompare(String(bv))
       : String(bv).localeCompare(String(av));
   });
+
+  async function handleRefreshFromFb(id: string) {
+    setRefreshingId(id);
+    try {
+      const { data: { session } } = await getSupabase().auth.getSession();
+      if (!session) return;
+      const res = await fetch("/api/admin/leads/refresh-from-fb", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        const { data: fbData } = await res.json();
+        setLeads((prev) => prev.map((l) => l.id === id ? { ...l, ...fbData, first_name: fbData.first_name, last_name: fbData.last_name } : l));
+      }
+    } finally {
+      setRefreshingId(null);
+    }
+  }
 
   async function handleDeleteLead(id: string) {
     if (!window.confirm("Delete this lead? This cannot be undone.")) return;
@@ -383,6 +403,18 @@ export default function AdminDashboard() {
                       )}
                       <div className="pt-1 flex items-center gap-2">
                         <SyncButton id={lead.id} syncingId={syncingId} syncResults={syncResults} onSync={syncToMoosend} />
+                        {lead.fb_leadgen_id && (
+                          <button
+                            onClick={() => handleRefreshFromFb(lead.id)}
+                            disabled={refreshingId === lead.id}
+                            title="Re-fetch from Facebook"
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50"
+                          >
+                            {refreshingId === lead.id
+                              ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              : <span className="text-xs font-bold leading-none">f</span>}
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDeleteLead(lead.id)}
                           disabled={deletingId === lead.id}
@@ -419,6 +451,7 @@ export default function AdminDashboard() {
                         ))}
                         <th className="px-4 py-3 whitespace-nowrap">Status</th>
                         <th className="px-4 py-3 whitespace-nowrap">Moosend</th>
+                        <th className="px-4 py-3"></th>
                         <th className="px-4 py-3"></th>
                       </tr>
                     </thead>
@@ -457,6 +490,20 @@ export default function AdminDashboard() {
                           </td>
                           <td className="px-4 py-3">
                             <SyncButton id={lead.id} syncingId={syncingId} syncResults={syncResults} onSync={syncToMoosend} />
+                          </td>
+                          <td className="px-4 py-3">
+                            {lead.fb_leadgen_id && (
+                              <button
+                                onClick={() => handleRefreshFromFb(lead.id)}
+                                disabled={refreshingId === lead.id}
+                                title="Re-fetch name & fields from Facebook"
+                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50"
+                              >
+                                {refreshingId === lead.id
+                                  ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                  : <span className="text-xs font-bold leading-none">f</span>}
+                              </button>
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             <button
