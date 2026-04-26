@@ -20,7 +20,10 @@ import {
   Send,
   Check,
   X,
+  UserPlus,
 } from "lucide-react";
+
+const EMPTY_FORM = { first_name: "", last_name: "", email: "", phone: "", budget: "", appointment_date: "" };
 
 type LeadStatus = "new" | "booked" | "archived";
 type ViewMode = "table" | "kanban";
@@ -72,6 +75,10 @@ export default function AdminDashboard() {
   const [view, setView] = useState<ViewMode>("table");
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [syncResults, setSyncResults] = useState<Record<string, "ok" | "error">>({});
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState(EMPTY_FORM);
+  const [addingLead, setAddingLead] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -128,6 +135,32 @@ export default function AdminDashboard() {
       ? String(av).localeCompare(String(bv))
       : String(bv).localeCompare(String(av));
   });
+
+  async function handleAddLead(e: React.FormEvent) {
+    e.preventDefault();
+    setAddingLead(true);
+    setAddError(null);
+    try {
+      const { data: { session } } = await getSupabase().auth.getSession();
+      if (!session) { setAddError("Not authenticated"); return; }
+
+      const res = await fetch("/api/admin/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify(addForm),
+      });
+      const json = await res.json();
+      if (!res.ok) { setAddError(json.error || "Failed to add lead"); return; }
+
+      setShowAddModal(false);
+      setAddForm(EMPTY_FORM);
+      await fetchLeads();
+    } catch {
+      setAddError("Something went wrong. Please try again.");
+    } finally {
+      setAddingLead(false);
+    }
+  }
 
   async function syncToMoosend(id: string) {
     setSyncingId(id);
@@ -207,6 +240,13 @@ export default function AdminDashboard() {
               <LayoutGrid className="w-4 h-4" />
             </button>
           </div>
+          <button
+            onClick={() => { setAddForm(EMPTY_FORM); setAddError(null); setShowAddModal(true); }}
+            className="flex items-center gap-1.5 text-sm font-medium bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add Lead</span>
+          </button>
           <button
             onClick={handleLogout}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 transition-colors"
@@ -467,6 +507,105 @@ export default function AdminDashboard() {
           </DragDropContext>
         )}
       </main>
+
+      {showAddModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => setShowAddModal(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-900">Add Lead</h2>
+              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleAddLead} className="px-6 py-4 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">First Name</label>
+                  <input
+                    type="text"
+                    value={addForm.first_name}
+                    onChange={(e) => setAddForm((f) => ({ ...f, first_name: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Last Name</label>
+                  <input
+                    type="text"
+                    value={addForm.last_name}
+                    onChange={(e) => setAddForm((f) => ({ ...f, last_name: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={addForm.email}
+                  onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={addForm.phone}
+                  onChange={(e) => setAddForm((f) => ({ ...f, phone: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Budget</label>
+                <input
+                  type="text"
+                  placeholder="e.g. $5,000–$10,000"
+                  value={addForm.budget}
+                  onChange={(e) => setAddForm((f) => ({ ...f, budget: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Appointment Date</label>
+                <input
+                  type="date"
+                  value={addForm.appointment_date}
+                  onChange={(e) => setAddForm((f) => ({ ...f, appointment_date: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {addError && <p className="text-sm text-red-600">{addError}</p>}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addingLead}
+                  className="bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {addingLead ? <RefreshCw className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                  {addingLead ? "Adding..." : "Add Lead"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
