@@ -38,7 +38,7 @@ export async function addSubscriberToMoosend(data: {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ Subscribers: [subscriber] }),
+        body: JSON.stringify(subscriber),
       }
     );
 
