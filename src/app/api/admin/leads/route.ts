@@ -48,3 +48,27 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ status: "ok", moosend: moosendResult.success });
 }
+
+export async function DELETE(req: NextRequest) {
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: { user }, error: authError } = await getSupabaseAdmin().auth.getUser(token);
+  if (authError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await req.json();
+  if (!id) {
+    return NextResponse.json({ error: "id is required" }, { status: 400 });
+  }
+
+  const { error } = await getSupabaseAdmin().from("leads").delete().eq("id", id);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ status: "ok" });
+}
