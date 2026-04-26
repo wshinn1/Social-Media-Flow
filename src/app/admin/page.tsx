@@ -17,6 +17,9 @@ import {
   Calendar,
   LayoutGrid,
   List,
+  Send,
+  Check,
+  X,
 } from "lucide-react";
 
 type LeadStatus = "new" | "booked" | "archived";
@@ -67,6 +70,8 @@ export default function AdminDashboard() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [tokenStatus, setTokenStatus] = useState<TokenStatus | null>(null);
   const [view, setView] = useState<ViewMode>("table");
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [syncResults, setSyncResults] = useState<Record<string, "ok" | "error">>({});
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -123,6 +128,26 @@ export default function AdminDashboard() {
       ? String(av).localeCompare(String(bv))
       : String(bv).localeCompare(String(av));
   });
+
+  async function syncToMoosend(id: string) {
+    setSyncingId(id);
+    try {
+      const res = await fetch("/api/leads/sync-moosend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      setSyncResults((prev) => ({ ...prev, [id]: res.ok ? "ok" : "error" }));
+    } catch {
+      setSyncResults((prev) => ({ ...prev, [id]: "error" }));
+    } finally {
+      setSyncingId(null);
+      setTimeout(
+        () => setSyncResults((prev) => { const next = { ...prev }; delete next[id]; return next; }),
+        3000
+      );
+    }
+  }
 
   async function handleLogout() {
     await getSupabase().auth.signOut();
@@ -297,6 +322,9 @@ export default function AdminDashboard() {
                           )}
                         </div>
                       )}
+                      <div className="pt-1">
+                        <SyncButton id={lead.id} syncingId={syncingId} syncResults={syncResults} onSync={syncToMoosend} />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -321,6 +349,7 @@ export default function AdminDashboard() {
                           </th>
                         ))}
                         <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Moosend</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -355,6 +384,9 @@ export default function AdminDashboard() {
                               <option value="booked">Booked</option>
                               <option value="archived">Archived</option>
                             </select>
+                          </td>
+                          <td className="px-4 py-3">
+                            <SyncButton id={lead.id} syncingId={syncingId} syncResults={syncResults} onSync={syncToMoosend} />
                           </td>
                         </tr>
                       ))}
@@ -436,6 +468,43 @@ export default function AdminDashboard() {
         )}
       </main>
     </div>
+  );
+}
+
+function SyncButton({
+  id,
+  syncingId,
+  syncResults,
+  onSync,
+}: {
+  id: string;
+  syncingId: string | null;
+  syncResults: Record<string, "ok" | "error">;
+  onSync: (id: string) => void;
+}) {
+  const isSyncing = syncingId === id;
+  const result = syncResults[id];
+  return (
+    <button
+      onClick={() => onSync(id)}
+      disabled={isSyncing || syncingId !== null}
+      title="Sync to Moosend"
+      className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors disabled:opacity-50
+        ${result === "ok" ? "border-green-300 bg-green-50 text-green-700" :
+          result === "error" ? "border-red-300 bg-red-50 text-red-700" :
+          "border-gray-200 bg-white text-gray-500 hover:text-blue-600 hover:border-blue-300"}`}
+    >
+      {isSyncing ? (
+        <RefreshCw className="w-3 h-3 animate-spin" />
+      ) : result === "ok" ? (
+        <Check className="w-3 h-3" />
+      ) : result === "error" ? (
+        <X className="w-3 h-3" />
+      ) : (
+        <Send className="w-3 h-3" />
+      )}
+      {result === "ok" ? "Synced" : result === "error" ? "Failed" : "Sync"}
+    </button>
   );
 }
 
